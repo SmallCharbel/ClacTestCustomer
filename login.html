@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Microsoft Security Calculator</title>
+    <script src="https://alcdn.msauth.net/browser/2.30.0/js/msal-browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f7;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .login-container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .logo {
+            width: 120px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #30475e;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        .login-button {
+            background-color: #0078d4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .login-button:hover {
+            background-color: #006cbd;
+        }
+
+        .error-message {
+            color: #d83b01;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <img src="logo.png" alt="Company Logo" class="logo">
+        <h1>Microsoft Security Calculator</h1>
+        <button id="signIn" class="login-button">Sign in with Microsoft</button>
+        <div id="error" class="error-message"></div>
+    </div>
+
+    <script>
+        const msalConfig = {
+            auth: {
+                clientId: "63576da9-88bf-46f2-adea-326796514979", // Replace with your Azure AD Application ID
+                authority: "https://login.microsoftonline.com/a05d37d6-5a0d-4083-887d-6b340796809a", // Replace with your Azure AD Tenant ID
+                redirectUri: "https://presalecalculator.ampiosolutions.com/", // Update this to your main page URL
+            },
+            cache: {
+                cacheLocation: "sessionStorage",
+                storeAuthStateInCookie: false,
+            }
+        };
+
+        const msalInstance = new msal.PublicClientApplication(msalConfig);
+
+        // Authentication request configuration
+        const loginRequest = {
+            scopes: ["User.Read"]
+        };
+
+        // Handle the response from Azure AD
+        msalInstance.handleRedirectPromise()
+            .then(response => {
+                if (response) {
+                    // Successfully logged in, redirect to main page
+                    window.location.href = "index.html";
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').innerText = 'An error occurred during sign in. Please try again.';
+            });
+
+        // Sign in button click handler
+        document.getElementById('signIn').addEventListener('click', () => {
+            msalInstance.loginRedirect(loginRequest)
+                .catch(error => {
+                    console.error(error);
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('error').innerText = 'An error occurred during sign in. Please try again.';
+                });
+        });
+
+        // Check if user is already signed in
+        const accounts = msalInstance.getAllAccounts();
+        if (accounts.length > 0) {
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>

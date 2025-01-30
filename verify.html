@@ -21,8 +21,8 @@
                 return;
             }
 
-            const storageAccount = reguserscalculator;
-            const sasToken = sp=rwl&st=2025-01-30T17:59:14Z&se=2028-01-05T01:59:14Z&spr=https&sv=2022-11-02&sr=c&sig=Vuw2vN6LGlsZhLKCzTozTn%2B9jOlE9ybVaF9ykigJM%2FM%3D;
+            const storageAccount = "reguserscalculator";
+            const sasToken = "sp=rwl&st=2025-01-30T17:59:14Z&se=2028-01-05T01:59:14Z&spr=https&sv=2022-11-02&sr=c&sig=Vuw2vN6LGlsZhLKCzTozTn%2B9jOlE9ybVaF9ykigJM%2FM%3D";
             const blobService = AzureStorage.Blob.createBlobServiceWithSas(
                 `https://${storageAccount}.blob.core.windows.net`, sasToken
             );

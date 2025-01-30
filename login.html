@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Microsoft Security Calculator</title>
     <script src="https://alcdn.msauth.net/browser/2.30.0/js/msal-browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/azure-storage/1.10.0/azure-storage.blob.min.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -66,71 +67,78 @@
     <div class="login-container">
         <img src="logo.png" alt="Company Logo" class="logo">
         <h1>Microsoft Security Calculator</h1>
-        <input type="text" id="name" placeholder="Your Name">
-<input type="email" id="email" placeholder="Your Email">
-<button onclick="sendVerificationEmail()">Register</button>
-<p id="message"></p>
+
+        <!-- Registration Form -->
+        <input type="text" id="name" placeholder="Your Name" required>
+        <input type="email" id="email" placeholder="Your Email" required>
+        <button id="registerBtn">Register</button>
+        <p id="message"></p>
 
         <div id="error" class="error-message"></div>
     </div>
 
-   <script src="https://cdnjs.cloudflare.com/ajax/libs/azure-storage/1.10.0/azure-storage.blob.min.js"></script>
-<script>
-async function sendVerificationEmail() {
-    const name = document.getElementById("name").value;
-    const email = document.getElementById("email").value;
+    <script>
+        async function sendVerificationEmail() {
+            const name = document.getElementById("name").value;
+            const email = document.getElementById("email").value;
 
-    if (!name || !email) {
-        alert("Please enter your name and email.");
-        return;
-    }
+            if (!name || !email) {
+                alert("Please enter your name and email.");
+                return;
+            }
 
-    const token = Math.random().toString(36).substr(2, 12);
-    const verificationURL = `https://smallcharbel.github.io/ClacTestCustomer/verify.html?email=${encodeURIComponent(email)}&token=${token}`;
+            // Generate a random token
+            const token = Math.random().toString(36).substr(2, 12);
+            const verificationURL = `https://smallcharbel.github.io/ClacTestCustomer/verify.html?email=${encodeURIComponent(email)}&token=${token}`;
 
-    // Azure Storage Configuration
-    const storageAccount = reguserscalculator;
-    const sasToken = sp=rwl&st=2025-01-30T17:59:14Z&se=2028-01-05T01:59:14Z&spr=https&sv=2022-11-02&sr=c&sig=Vuw2vN6LGlsZhLKCzTozTn%2B9jOlE9ybVaF9ykigJM%2FM%3D;
-    const blobService = AzureStorage.Blob.createBlobServiceWithSas(
-        `https://${storageAccount}.blob.core.windows.net`, sasToken
-    );
+            // Azure Storage Configuration (Ensure values are strings)
+            const storageAccount = "reguserscalculator";
+            const sasToken = "sp=rwl&st=2025-01-30T17:59:14Z&se=2028-01-05T01:59:14Z&spr=https&sv=2022-11-02&sr=c&sig=Vuw2vN6LGlsZhLKCzTozTn%2B9jOlE9ybVaF9ykigJM%2FM%3D";
+            const blobService = AzureStorage.Blob.createBlobServiceWithSas(
+                `https://${storageAccount}.blob.core.windows.net`, sasToken
+            );
 
-    const containerName = "email-verifications";
-    const blobName = `${email}.json`;
+            const containerName = "email-verifications";
+            const blobName = `${email}.json`;
 
-    const userData = JSON.stringify({ email, token, verified: false });
+            const userData = JSON.stringify({ email, token, verified: false });
 
-    blobService.createBlockBlobFromText(containerName, blobName, userData, (error) => {
-        if (error) {
-            console.error("Error storing token:", error);
-            alert("Error saving verification data.");
-        } else {
-            console.log("Verification token stored in Azure Storage");
+            // Store verification token in Azure Blob Storage
+            blobService.createBlockBlobFromText(containerName, blobName, userData, (error) => {
+                if (error) {
+                    console.error("Error storing token:", error);
+                    alert("Error saving verification data.");
+                } else {
+                    console.log("Verification token stored in Azure Storage");
+                }
+            });
+
+            // Send Email via SendGrid API
+            fetch("https://api.sendgrid.com/v3/mail/send", {
+                method: "POST",
+                headers: {
+                    "Authorization": "Bearer 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",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    "personalizations": [{
+                        "to": [{ "email": email }],
+                        "dynamic_template_data": { "verification_url": verificationURL }
+                    }],
+                    "from": { "email": "your-email@example.com" },
+                    "template_id": "d-6ef81661177e4e5ea84be621ea5f1c6d"
+                })
+            })
+            .then(() => {
+                document.getElementById("message").innerText = "Verification email sent!";
+            })
+            .catch(error => console.error("Error:", error));
         }
-    });
 
-    // Send Email via SendGrid
-    fetch("https://api.sendgrid.com/v3/mail/send", {
-        method: "POST",
-        headers: {
-            "Authorization": "Bearer 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",
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            "personalizations": [{
-                "to": [{ "email": email }],
-                "dynamic_template_data": { "verification_url": verificationURL }
-            }],
-            "from": { "email": "your-email@example.com" },
-            "template_id": "d-6ef81661177e4e5ea84be621ea5f1c6d"
-        })
-    })
-    .then(() => {
-        document.getElementById("message").innerText = "Verification email sent!";
-    })
-    .catch(error => console.error("Error:", error));
-}
-</script>
-
+        // Ensure the button is attached properly after the script loads
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("registerBtn").addEventListener("click", sendVerificationEmail);
+        });
+    </script>
 </body>
 </html>

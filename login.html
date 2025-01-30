@@ -86,7 +86,7 @@ async function sendVerificationEmail() {
     }
 
     const token = Math.random().toString(36).substr(2, 12);
-    const verificationURL = `https://smallcharbel.github.io/CalcTestCustomer/verify.html?email=${encodeURIComponent(email)}&token=${token}`;
+    const verificationURL = `https://smallcharbel.github.io/ClacTestCustomer/verify.html?email=${encodeURIComponent(email)}&token=${token}`;
 
     // Azure Storage Configuration
     const storageAccount = reguserscalculator;

@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Microsoft Security Calculator</title>
 
-    <!-- Load Azure Storage SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/azure-storage@2.10.102/azure-storage.blob.min.js"></script>
-
+    <!-- ✅ New Azure Storage SDK -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/azure-storage-blob/12.8.0/azure-storage-blob.min.js"></script>
 
     <style>
         body {
@@ -82,10 +81,10 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            console.log("Azure Storage SDK Loaded:", typeof AzureStorage !== "undefined");
+            console.log("Checking Azure Storage SDK:", typeof azure !== "undefined");
 
-            if (typeof AzureStorage === "undefined") {
-                alert("Azure Storage SDK failed to load. Check your internet connection or script link.");
+            if (typeof azure === "undefined") {
+                alert("⚠️ Azure Storage SDK failed to load. Please check your internet connection and script link.");
                 return;
             }
 
@@ -108,24 +107,23 @@
             // Azure Storage Configuration
             const storageAccount = "reguserscalculator";
             const sasToken = "sp=rwl&st=2025-01-30T17:59:14Z&se=2028-01-05T01:59:14Z&spr=https&sv=2022-11-02&sr=c&sig=Vuw2vN6LGlsZhLKCzTozTn%2B9jOlE9ybVaF9ykigJM%2FM%3D";
-            const blobService = AzureStorage.Blob.createBlobServiceWithSas(
-                `https://${storageAccount}.blob.core.windows.net`, sasToken
-            );
-
             const containerName = "email-verifications";
             const blobName = `${email}.json`;
 
+            const blobServiceClient = new azure.storage.blob.BlobServiceClient(`https://${storageAccount}.blob.core.windows.net?${sasToken}`);
+            const containerClient = blobServiceClient.getContainerClient(containerName);
+            const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
             const userData = JSON.stringify({ email, token, verified: false });
 
-            // Store verification token in Azure Blob Storage
-            blobService.createBlockBlobFromText(containerName, blobName, userData, (error) => {
-                if (error) {
-                    console.error("Error storing token:", error);
-                    alert("Error saving verification data.");
-                } else {
-                    console.log("Verification token stored in Azure Storage");
-                }
-            });
+            try {
+                await blockBlobClient.upload(userData, userData.length);
+                console.log("✅ Verification token stored in Azure Storage.");
+            } catch (error) {
+                console.error("❌ Error storing token:", error);
+                alert("Error saving verification data.");
+                return;
+            }
 
             // Send Email via SendGrid API
             fetch("https://api.sendgrid.com/v3/mail/send", {

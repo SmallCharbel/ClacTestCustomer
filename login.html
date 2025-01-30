@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Microsoft Security Calculator</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/azure-storage/1.10.0/azure-storage.blob.min.js"></script>
+
+    <!-- Load Azure Storage SDK -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/azure-storage/2.10.102/azure-storage.blob.min.js"></script>
+
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -77,6 +80,17 @@
     </div>
 
     <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            console.log("Azure Storage SDK Loaded:", typeof AzureStorage !== "undefined");
+
+            if (typeof AzureStorage === "undefined") {
+                alert("Azure Storage SDK failed to load. Check your internet connection or script link.");
+                return;
+            }
+
+            document.getElementById("registerBtn").addEventListener("click", sendVerificationEmail);
+        });
+
         async function sendVerificationEmail() {
             const name = document.getElementById("name").value;
             const email = document.getElementById("email").value;
@@ -90,7 +104,7 @@
             const token = Math.random().toString(36).substr(2, 12);
             const verificationURL = `https://smallcharbel.github.io/ClacTestCustomer/verify.html?email=${encodeURIComponent(email)}&token=${token}`;
 
-            // Azure Storage Configuration (Ensure values are strings)
+            // Azure Storage Configuration
             const storageAccount = "reguserscalculator";
             const sasToken = "sp=rwl&st=2025-01-30T17:59:14Z&se=2028-01-05T01:59:14Z&spr=https&sv=2022-11-02&sr=c&sig=Vuw2vN6LGlsZhLKCzTozTn%2B9jOlE9ybVaF9ykigJM%2FM%3D";
             const blobService = AzureStorage.Blob.createBlobServiceWithSas(
@@ -133,11 +147,6 @@
             })
             .catch(error => console.error("Error:", error));
         }
-
-        // Ensure the button is attached properly after the script loads
-        document.addEventListener("DOMContentLoaded", function() {
-            document.getElementById("registerBtn").addEventListener("click", sendVerificationEmail);
-        });
     </script>
 </body>
 </html>

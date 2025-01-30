@@ -66,59 +66,71 @@
     <div class="login-container">
         <img src="logo.png" alt="Company Logo" class="logo">
         <h1>Microsoft Security Calculator</h1>
-        <button id="signIn" class="login-button">Sign in with Microsoft</button>
+        <input type="text" id="name" placeholder="Your Name">
+<input type="email" id="email" placeholder="Your Email">
+<button onclick="sendVerificationEmail()">Register</button>
+<p id="message"></p>
+
         <div id="error" class="error-message"></div>
     </div>
 
-    <script>
-        const msalConfig = {
-            auth: {
-                clientId: "63576da9-88bf-46f2-adea-326796514979", // Replace with your Azure AD Application ID
-                authority: "https://login.microsoftonline.com/a05d37d6-5a0d-4083-887d-6b340796809a", // Replace with your Azure AD Tenant ID
-                redirectUri: "https://presalecalculator.ampiosolutions.com/", // Update this to your main page URL
-            },
-            cache: {
-                cacheLocation: "sessionStorage",
-                storeAuthStateInCookie: false,
-            }
-        };
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/azure-storage/1.10.0/azure-storage.blob.min.js"></script>
+<script>
+async function sendVerificationEmail() {
+    const name = document.getElementById("name").value;
+    const email = document.getElementById("email").value;
 
-        const msalInstance = new msal.PublicClientApplication(msalConfig);
+    if (!name || !email) {
+        alert("Please enter your name and email.");
+        return;
+    }
 
-        // Authentication request configuration
-        const loginRequest = {
-            scopes: ["User.Read"]
-        };
+    const token = Math.random().toString(36).substr(2, 12);
+    const verificationURL = `https://smallcharbel.github.io/CalcTestCustomer/verify.html?email=${encodeURIComponent(email)}&token=${token}`;
 
-        // Handle the response from Azure AD
-        msalInstance.handleRedirectPromise()
-            .then(response => {
-                if (response) {
-                    // Successfully logged in, redirect to main page
-                    window.location.href = "index.html";
-                }
-            })
-            .catch(error => {
-                console.error(error);
-                document.getElementById('error').style.display = 'block';
-                document.getElementById('error').innerText = 'An error occurred during sign in. Please try again.';
-            });
+    // Azure Storage Configuration
+    const storageAccount = reguserscalculator;
+    const sasToken = sp=rwl&st=2025-01-30T17:59:14Z&se=2028-01-05T01:59:14Z&spr=https&sv=2022-11-02&sr=c&sig=Vuw2vN6LGlsZhLKCzTozTn%2B9jOlE9ybVaF9ykigJM%2FM%3D;
+    const blobService = AzureStorage.Blob.createBlobServiceWithSas(
+        `https://${storageAccount}.blob.core.windows.net`, sasToken
+    );
 
-        // Sign in button click handler
-        document.getElementById('signIn').addEventListener('click', () => {
-            msalInstance.loginRedirect(loginRequest)
-                .catch(error => {
-                    console.error(error);
-                    document.getElementById('error').style.display = 'block';
-                    document.getElementById('error').innerText = 'An error occurred during sign in. Please try again.';
-                });
-        });
+    const containerName = "email-verifications";
+    const blobName = `${email}.json`;
 
-        // Check if user is already signed in
-        const accounts = msalInstance.getAllAccounts();
-        if (accounts.length > 0) {
-            window.location.href = "index.html";
+    const userData = JSON.stringify({ email, token, verified: false });
+
+    blobService.createBlockBlobFromText(containerName, blobName, userData, (error) => {
+        if (error) {
+            console.error("Error storing token:", error);
+            alert("Error saving verification data.");
+        } else {
+            console.log("Verification token stored in Azure Storage");
         }
-    </script>
+    });
+
+    // Send Email via SendGrid
+    fetch("https://api.sendgrid.com/v3/mail/send", {
+        method: "POST",
+        headers: {
+            "Authorization": "Bearer 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",
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            "personalizations": [{
+                "to": [{ "email": email }],
+                "dynamic_template_data": { "verification_url": verificationURL }
+            }],
+            "from": { "email": "your-email@example.com" },
+            "template_id": "d-6ef81661177e4e5ea84be621ea5f1c6d"
+        })
+    })
+    .then(() => {
+        document.getElementById("message").innerText = "Verification email sent!";
+    })
+    .catch(error => console.error("Error:", error));
+}
+</script>
+
 </body>
 </html>

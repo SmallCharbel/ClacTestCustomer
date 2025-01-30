@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email</title>
+</head>
+<body>
+    <h2>Email Verification</h2>
+    <p id="message">Verifying...</p>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/azure-storage/1.10.0/azure-storage.blob.min.js"></script>
+    <script>
+        async function verifyEmail() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const email = urlParams.get("email");
+            const token = urlParams.get("token");
+
+            if (!email || !token) {
+                document.getElementById("message").innerText = "Invalid verification link.";
+                return;
+            }
+
+            const storageAccount = reguserscalculator;
+            const sasToken = sp=rwl&st=2025-01-30T17:59:14Z&se=2028-01-05T01:59:14Z&spr=https&sv=2022-11-02&sr=c&sig=Vuw2vN6LGlsZhLKCzTozTn%2B9jOlE9ybVaF9ykigJM%2FM%3D;
+            const blobService = AzureStorage.Blob.createBlobServiceWithSas(
+                `https://${storageAccount}.blob.core.windows.net`, sasToken
+            );
+
+            const containerName = "email-verifications";
+            const blobName = `${email}.json`;
+
+            blobService.getBlobToText(containerName, blobName, async (error, result) => {
+                if (error) {
+                    document.getElementById("message").innerText = "Verification failed.";
+                    return;
+                }
+
+                const userData = JSON.parse(result);
+                if (userData.token === token) {
+                    userData.verified = true;
+                    blobService.createBlockBlobFromText(containerName, blobName, JSON.stringify(userData), (err) => {
+                        if (err) {
+                            document.getElementById("message").innerText = "Error verifying email.";
+                        } else {
+                            document.getElementById("message").innerText = "Email verified successfully!";
+                        }
+                    });
+                } else {
+                    document.getElementById("message").innerText = "Invalid or expired token.";
+                }
+            });
+        }
+
+        verifyEmail();
+    </script>
+</body>
+</html>

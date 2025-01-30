@@ -81,73 +81,74 @@
         <div id="error" class="error-message"></div>
     </div>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            console.log("Checking Azure Storage SDK:", typeof azure !== "undefined");
+   <script type="module">
+    import { BlobServiceClient } from "https://cdn.jsdelivr.net/npm/@azure/storage-blob@12.12.0/+esm";
 
-            if (typeof azure === "undefined") {
-                alert("⚠️ Azure Storage SDK failed to load. Please check your internet connection and script link.");
-                return;
-            }
+    document.addEventListener("DOMContentLoaded", function () {
+        console.log("Checking Azure Storage SDK:", typeof BlobServiceClient !== "undefined");
 
-            document.getElementById("registerBtn").addEventListener("click", sendVerificationEmail);
-        });
-
-        async function sendVerificationEmail() {
-            const name = document.getElementById("name").value;
-            const email = document.getElementById("email").value;
-
-            if (!name || !email) {
-                alert("Please enter your name and email.");
-                return;
-            }
-
-            // Generate a random token
-            const token = Math.random().toString(36).substr(2, 12);
-            const verificationURL = `https://smallcharbel.github.io/ClacTestCustomer/verify.html?email=${encodeURIComponent(email)}&token=${token}`;
-
-            // Azure Storage Configuration
-            const storageAccount = "reguserscalculator";
-            const sasToken = "sp=rwl&st=2025-01-30T17:59:14Z&se=2028-01-05T01:59:14Z&spr=https&sv=2022-11-02&sr=c&sig=Vuw2vN6LGlsZhLKCzTozTn%2B9jOlE9ybVaF9ykigJM%2FM%3D";
-            const containerName = "email-verifications";
-            const blobName = `${email}.json`;
-
-            const blobServiceClient = new azure.storage.blob.BlobServiceClient(`https://${storageAccount}.blob.core.windows.net?${sasToken}`);
-            const containerClient = blobServiceClient.getContainerClient(containerName);
-            const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-
-            const userData = JSON.stringify({ email, token, verified: false });
-
-            try {
-                await blockBlobClient.upload(userData, userData.length);
-                console.log("✅ Verification token stored in Azure Storage.");
-            } catch (error) {
-                console.error("❌ Error storing token:", error);
-                alert("Error saving verification data.");
-                return;
-            }
-
-            // Send Email via SendGrid API
-            fetch("https://api.sendgrid.com/v3/mail/send", {
-                method: "POST",
-                headers: {
-                    "Authorization": "Bearer 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",
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    "personalizations": [{
-                        "to": [{ "email": email }],
-                        "dynamic_template_data": { "verification_url": verificationURL }
-                    }],
-                    "from": { "email": "your-email@example.com" },
-                    "template_id": "d-6ef81661177e4e5ea84be621ea5f1c6d"
-                })
-            })
-            .then(() => {
-                document.getElementById("message").innerText = "Verification email sent!";
-            })
-            .catch(error => console.error("Error:", error));
+        if (typeof BlobServiceClient === "undefined") {
+            alert("⚠️ Azure Storage SDK failed to load. Please check your internet connection and script link.");
+            return;
         }
-    </script>
+
+        document.getElementById("registerBtn").addEventListener("click", sendVerificationEmail);
+    });
+
+    async function sendVerificationEmail() {
+        const name = document.getElementById("name").value;
+        const email = document.getElementById("email").value;
+
+        if (!name || !email) {
+            alert("Please enter your name and email.");
+            return;
+        }
+
+        const token = Math.random().toString(36).substr(2, 12);
+        const verificationURL = `https://smallcharbel.github.io/ClacTestCustomer/verify.html?email=${encodeURIComponent(email)}&token=${token}`;
+
+        // Azure Storage Configuration
+        const storageAccount = "reguserscalculator";
+        const sasToken = "sp=rwl&st=2025-01-30T17:59:14Z&se=2028-01-05T01:59:14Z&spr=https&sv=2022-11-02&sr=c&sig=Vuw2vN6LGlsZhLKCzTozTn%2B9jOlE9ybVaF9ykigJM%2FM%3D";
+        const containerName = "email-verifications";
+        const blobName = `${email}.json`;
+
+        const blobServiceClient = new BlobServiceClient(`https://${storageAccount}.blob.core.windows.net?${sasToken}`);
+        const containerClient = blobServiceClient.getContainerClient(containerName);
+        const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+        const userData = JSON.stringify({ email, token, verified: false });
+
+        try {
+            await blockBlobClient.upload(userData, userData.length);
+            console.log("✅ Verification token stored in Azure Storage.");
+        } catch (error) {
+            console.error("❌ Error storing token:", error);
+            alert("Error saving verification data.");
+            return;
+        }
+
+        // Send Email via SendGrid API
+        fetch("https://api.sendgrid.com/v3/mail/send", {
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer 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",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "personalizations": [{
+                    "to": [{ "email": email }],
+                    "dynamic_template_data": { "verification_url": verificationURL }
+                }],
+                "from": { "email": "your-email@example.com" },
+                "template_id": "d-6ef81661177e4e5ea84be621ea5f1c6d"
+            })
+        })
+        .then(() => {
+            document.getElementById("message").innerText = "Verification email sent!";
+        })
+        .catch(error => console.error("Error:", error));
+    }
+</script>
 </body>
 </html>

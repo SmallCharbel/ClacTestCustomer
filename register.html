@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Register - Security Calculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background-color: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .logo img {
+      max-width: 200px;
+    }
+
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #555;
+      font-weight: bold;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    .button {
+      background-color: #007bff;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+
+    .button:hover {
+      background-color: #0056b3;
+    }
+
+    .login-link {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .login-link a {
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    .login-link a:hover {
+      text-decoration: underline;
+    }
+
+    #verification-section {
+      display: none;
+    }
+
+    .success-message {
+      color: #28a745;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    .error-message {
+      color: #dc3545;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <img src="logo.png" alt="Company Logo">
+    </div>
+    
+    <div id="registration-form">
+      <h1>Create Account</h1>
+      <div class="form-group">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" required>
+      </div>
+      
+      <button class="button" onclick="register()">Register</button>
+      
+      <div class="login-link">
+        <p>Already have an account? <a href="login.html">Login here</a></p>
+      </div>
+    </div>
+
+    <div id="verification-section">
+      <h1>Verify Email</h1>
+      <div class="form-group">
+        <label for="code">Enter Verification Code</label>
+        <input type="text" id="code" maxlength="6" required>
+        <p class="success-message">Verification code sent to your email!</p>
+      </div>
+      
+      <button class="button" onclick="verify()">Verify</button>
+    </div>
+  </div>
+
+  <script>
+    // Check if user is already logged in
+    window.onload = function() {
+      const user = JSON.parse(sessionStorage.getItem('user'));
+      if (user && user.verified) {
+        window.location.href = '/';
+      }
+    }
+
+    async function register() {
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+
+      try {
+        const response = await fetch('/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name, email })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          document.getElementById('registration-form').style.display = 'none';
+          document.getElementById('verification-section').style.display = 'block';
+        } else {
+          alert(data.error);
+        }
+      } catch (error) {
+        alert('Failed to register');
+      }
+    }
+
+    async function verify() {
+      const email = document.getElementById('email').value;
+      const code = document.getElementById('code').value;
+
+      try {
+        const response = await fetch('/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, code })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          sessionStorage.setItem('user', JSON.stringify({
+            name: data.name,
+            email: data.email,
+            verified: true
+          }));
+          window.location.href = '/';
+        } else {
+          alert(data.error);
+        }
+      } catch (error) {
+        alert('Failed to verify code');
+      }
+    }
+  </script>
+</body>
+</html> 

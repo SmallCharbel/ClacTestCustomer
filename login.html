@@ -176,28 +176,40 @@
       const code = document.getElementById('code').value;
 
       try {
-        const response = await fetch('/verify', {
+        console.log('Sending verification with:', { email, code, type: 'verify' }); // Debug log
+        
+        const response = await fetch('https://calcfunctionampio.azurewebsites.net/api/EmailVerification', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ email, code })
+          body: JSON.stringify({ email, code, type: 'verify' })
         });
 
-        const data = await response.json();
+        console.log('Response status:', response.status); // Debug log
         
-        if (response.ok) {
-          sessionStorage.setItem('user', JSON.stringify({
-            name: data.name,
-            email: data.email,
-            verified: true
-          }));
-          window.location.href = '/';
-        } else {
-          alert(data.error);
+        const data = await response.text(); // Changed from response.json() to see raw response
+        console.log('Raw response:', data); // Debug log
+        
+        try {
+            const jsonData = JSON.parse(data);
+            if (response.ok) {
+                sessionStorage.setItem('user', JSON.stringify({
+                    name: jsonData.name,
+                    email: jsonData.email,
+                    verified: true
+                }));
+                window.location.href = '/';
+            } else {
+                alert(jsonData.error || 'Verification failed');
+            }
+        } catch (parseError) {
+            console.error('Failed to parse response:', data);
+            alert('Invalid response from server');
         }
       } catch (error) {
-        alert('Failed to verify code');
+        console.error('Verification error:', error); // More detailed error
+        alert('Failed to verify code: ' + error.message);
       }
     }
   </script>
